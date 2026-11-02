@@ -1,0 +1,350 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>منظومة رَصْد للمتابعة والتحول الرقمى</title>
+    <meta name="description" content="منظومة رَصْد للمتابعة والتحويل الرقمي — إدارة ديروط التعليمية | تصميم وتطوير: أ/ محمود حسن خرابة">
+    
+    <!-- 🛡️ Security & SEO Enhancements -->
+    <meta name="robots" content="noindex, nofollow, noimageindex">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   frame-src https://script.google.com https://*.googleusercontent.com https://*.google.com; 
+                   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; 
+                   font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; 
+                   img-src 'self' data: blob:; 
+                   script-src 'self' 'unsafe-inline';">
+
+    <!-- ========== وسوم PWA ========== -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="color-scheme" content="dark light">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="رَصْد">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <link rel="icon" type="image/png" href="./icon-192.png">
+
+    <!-- External Resources -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --dark: #1e1b4b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; width: 100%; overflow: hidden; background: var(--dark); font-family: 'Tajawal', sans-serif; }
+
+        /* ===== Offline Banner ===== */
+        #offline-banner {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+            background: var(--danger); color: white; text-align: center;
+            padding: 10px; font-weight: 700; font-size: 14px;
+            transform: translateY(-100%); transition: transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        #offline-banner.show { transform: translateY(0); }
+
+        /* ===== iframe ===== */
+        #appFrame {
+            position: fixed; inset: 0; width: 100%; height: 100%;
+            border: none; background: #fff; opacity: 0;
+            transition: opacity 0.6s ease; z-index: 1;
+        }
+        #appFrame.show { opacity: 1; }
+
+        /* ===== Splash Screen ===== */
+        #splash {
+            position: fixed; inset: 0; z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        #splash.hide { opacity: 0; transform: scale(1.08); pointer-events: none; }
+        
+        .splash-logo-wrap { position: relative; margin-bottom: 26px; display: flex; align-items: center; justify-content: center; }
+        .splash-logo {
+            width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;
+            font-size: 52px; color: #fff; background: rgba(255,255,255,.14);
+            border: 2px solid rgba(255,255,255,.25); border-radius: 30px; backdrop-filter: blur(12px);
+            z-index: 2; animation: pulse 2.2s ease-in-out infinite;
+        }
+        .splash-logo-wrap::before, .splash-logo-wrap::after {
+            content: ""; position: absolute; width: 110px; height: 110px;
+            border: 2px solid rgba(165,180,252,.35); border-radius: 34px;
+            animation: radar 2.6s ease-out infinite; pointer-events: none;
+        }
+        .splash-logo-wrap::after { animation-delay: 1.3s; }
+        
+        .splash-title { color: #fff; font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+        .brand { background: linear-gradient(90deg,#a5b4fc,#f0abfc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .splash-sub { color: rgba(255,255,255,.8); font-size: 14px; font-weight: 500; margin-bottom: 18px; }
+        
+        .splash-pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
+        .splash-pill {
+            display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px;
+            font-size: 11.5px; font-weight: 700; background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.9); backdrop-filter: blur(8px);
+        }
+        .pill-version { background: rgba(16,185,129,.16); border-color: rgba(16,185,129,.4); color: #6ee7b7; }
+
+        .splash-loader { width: 220px; height: 5px; background: rgba(255,255,255,.15); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+        .splash-loader span { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#a5b4fc,#c4b5fd,#f0abfc); border-radius: 10px; animation: load 2.4s ease forwards; }
+        
+        /* Smart Timeout States */
+        .status-msg { color: rgba(255,255,255,.9); font-size: 13px; font-weight: 600; min-height: 20px; text-align: center; }
+        .status-msg.warning { color: var(--warning); }
+        .status-msg.error { color: var(--danger); }
+
+        .splash-footer { position: absolute; bottom: 52px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,.55); font-size: 12px; font-weight: 600; }
+        .splash-legal { position: absolute; bottom: 24px; left: 0; right: 0; text-align: center; padding: 0 16px; color: rgba(255,255,255,.42); font-size: 10.5px; font-weight: 600; line-height: 1.7; }
+
+        /* ===== iOS Banner ===== */
+        #ios-banner {
+            position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 2000;
+            display: none; max-width: 92%; background: rgba(30,27,75,.96);
+            border: 1px solid rgba(255,255,255,.2); color: #fff; padding: 16px; border-radius: 16px;
+            font-size: 13px; font-weight: 700; line-height: 1.8; box-shadow: 0 12px 32px rgba(0,0,0,.4);
+            backdrop-filter: blur(10px);
+        }
+        #ios-banner .close-btn {
+            position: absolute; top: 8px; left: 8px; width: 24px; height: 24px;
+            background: rgba(255,255,255,.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: #fff; font-size: 14px; transition: background 0.2s;
+        }
+        #ios-banner .close-btn:hover { background: rgba(255,255,255,.2); }
+        #ios-banner b { color: #a5b4fc; }
+
+        /* ===== Fallback Button ===== */
+        .float-btn {
+            position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 2000;
+            display: none; align-items: center; gap: 9px; border: none; cursor: pointer;
+            padding: 14px 26px; border-radius: 50px; font-family: 'Tajawal', sans-serif;
+            font-size: 14px; font-weight: 800; color: #fff; text-decoration: none;
+            box-shadow: 0 12px 32px rgba(0,0,0,.35); animation: slideUp .5s ease;
+        }
+        #fallback-btn { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        #install-btn { background: linear-gradient(135deg, #10b981, #059669); }
+
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+        @keyframes radar { 0% { transform: scale(1); opacity: .85; } 100% { transform: scale(1.6); opacity: 0; } }
+        @keyframes load { 0% { width: 0; } 50% { width: 70%; } 100% { width: 100%; } }
+        @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 30px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    </style>
+</head>
+<body>
+
+    <!-- 🛡️ Offline Banner -->
+    <div id="offline-banner">
+        <i class="fa-solid fa-wifi-slash"></i> لا يوجد اتصال بالإنترنت — يرجى التحقق من الشبكة
+    </div>
+
+    <!-- 🎨 Splash Screen -->
+    <div id="splash">
+        <div class="splash-logo-wrap">
+            <div class="splash-logo"><i class="fa-solid fa-shield-halved"></i></div>
+        </div>
+        <div class="splash-title"><span class="brand">منظومة رَصْد</span></div>
+        <div class="splash-sub">للمتابعة والتحول الرقمي</div>
+        <div class="splash-pills">
+            <span class="splash-pill"><i class="fa-solid fa-building-columns"></i> إدارة ديروط التعليمية</span>
+            <span class="splash-pill pill-version"><i class="fa-solid fa-code-branch"></i> إصدار 1</span>
+        </div>
+        <div class="splash-loader"><span></span></div>
+        <div class="status-msg" id="status-msg">جاري تحميل النظام...</div>
+        <div class="splash-footer">تصميم وتطوير: أ/ محمود حسن خرابة — أخصائي خبير تكنولوجيا تعليم</div>
+        <div class="splash-legal">© 2026 كافة حقوق الملكية الفكرية للمنصة محفوظة لمالكها المطور </div>
+        <!--
+        <div class="splash-legal">© 2026 كافة حقوق الملكية الفكرية للمنصة محفوظة لمالكها المطور — الانتفاع بموجب اشتراك سنوي متجدد (SaaS)</div>
+        -->
+
+    </div>
+
+    <!-- 🖥️ App Frame -->
+    <iframe id="appFrame" 
+            src="https://script.google.com/macros/s/AKfycbzz4oBwCsAXytI24UURxixh2xnazAqWOmhMIhAgn2VoDX2ZtARNDCAVbC0QC8-6-BKX7w/exec" 
+            allow="fullscreen; camera; microphone; geolocation; clipboard-write" 
+            title="منظومة رَصْد للمتابعة"></iframe>
+
+    <!-- 📲 iOS Banner -->
+    <div id="ios-banner">
+        <span class="close-btn" id="close-ios-banner">&times;</span>
+        📲 <b>لتثبيت التطبيق على iPhone:</b><br>
+        1️⃣ اضغط زر المشاركة <b>⎋</b> أسفل Safari<br>
+        2️⃣ اختر «إضافة إلى شاشة البداية» <b>+</b><br>
+        3️⃣ اضغط «إضافة» — وسيفتح كتطبيق مستقل
+    </div>
+
+    <!-- 🔗 Fallback Buttons -->
+    <button id="install-btn" class="float-btn">📲 تثبيت التطبيق</button>
+    <a id="fallback-btn" class="float-btn" href="#" target="_blank" rel="noopener">🔗 فتح التطبيق الاحتياطي</a>
+
+    <!-- 🏗️ Enterprise Architecture (IIFE) -->
+    <script>
+        const RasadEnterpriseWrapper = (function() {
+            'use strict';
+
+            // ⚙️ Configuration
+            const CONFIG = {
+                APP_URL: 'https://script.google.com/macros/s/AKfycbzz4oBwCsAXytI24UURxixh2xnazAqWOmhMIhAgn2VoDX2ZtARNDCAVbC0QC8-6-BKX7w/exec',
+                TIMINGS: {
+                    SLOW_NETWORK_THRESHOLD: 6000, // 6 seconds
+                    FAIL_THRESHOLD: 12000          // 12 seconds
+                },
+                STORAGE_KEYS: {
+                    IOS_BANNER_DISMISSED: 'rasad_ios_banner_dismissed'
+                }
+            };
+
+            // 🛡️ Security Module
+            const Security = {
+                init: function() {
+                    // Anti-Debugging (Prevent F12, Right Click, etc.)
+                    document.addEventListener('contextmenu', e => e.preventDefault());
+                    document.addEventListener('keydown', e => {
+                        if (e.key === 'F12' || 
+                            (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || 
+                            (e.ctrlKey && e.key.toUpperCase() === 'U')) {
+                            e.preventDefault();
+                            console.warn('⛔ Debugging tools are disabled for security.');
+                        }
+                    });
+                }
+            };
+
+            // 🌐 Network Module (Offline-First)
+            const Network = {
+                init: function() {
+                    const banner = document.getElementById('offline-banner');
+                    const updateStatus = () => {
+                        if (!navigator.onLine) {
+                            banner.classList.add('show');
+                        } else {
+                            banner.classList.remove('show');
+                        }
+                    };
+                    window.addEventListener('online', updateStatus);
+                    window.addEventListener('offline', updateStatus);
+                    updateStatus(); // Initial check
+                }
+            };
+
+            // 🎨 UX Module
+            const UX = {
+                state: 'loading', // loading | slow | failed | loaded
+                timers: [],
+
+                init: function() {
+                    this.setupIosBanner();
+                    this.setupPWA();
+                    this.startLoadingSequence();
+                },
+
+                setupIosBanner: function() {
+                    const banner = document.getElementById('ios-banner');
+                    const closeBtn = document.getElementById('close-ios-banner');
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+                    
+                    if (isIOS && !isStandalone && !localStorage.getItem(CONFIG.STORAGE_KEYS.IOS_BANNER_DISMISSED)) {
+                        setTimeout(() => { banner.style.display = 'block'; }, 2500);
+                    }
+
+                    closeBtn.addEventListener('click', () => {
+                        banner.style.display = 'none';
+                        localStorage.setItem(CONFIG.STORAGE_KEYS.IOS_BANNER_DISMISSED, 'true');
+                    });
+                },
+
+                setupPWA: function() {
+                    let deferredPrompt;
+                    const installBtn = document.getElementById('install-btn');
+                    
+                    window.addEventListener('beforeinstallprompt', (e) => {
+                        e.preventDefault();
+                        deferredPrompt = e;
+                        installBtn.style.display = 'flex';
+                    });
+
+                    installBtn.addEventListener('click', async () => {
+                        if (!deferredPrompt) return;
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        if (outcome === 'accepted') installBtn.style.display = 'none';
+                        deferredPrompt = null;
+                    });
+                },
+
+                startLoadingSequence: function() {
+                    const frame = document.getElementById('appFrame');
+                    const splash = document.getElementById('splash');
+                    const statusMsg = document.getElementById('status-msg');
+                    const fallbackBtn = document.getElementById('fallback-btn');
+                    
+                    fallbackBtn.href = CONFIG.APP_URL;
+
+                    // Stage 1: Normal Loading (0-6s)
+                    this.timers.push(setTimeout(() => {
+                        if (this.state === 'loading') {
+                            this.state = 'slow';
+                            statusMsg.textContent = '⚠️ الشبكة بطيئة... جاري المحاولة';
+                            statusMsg.classList.add('warning');
+                        }
+                    }, CONFIG.TIMINGS.SLOW_NETWORK_THRESHOLD));
+
+                    // Stage 2: Fallback (12s+)
+                    this.timers.push(setTimeout(() => {
+                        if (this.state !== 'loaded') {
+                            this.state = 'failed';
+                            splash.classList.add('hide');
+                            fallbackBtn.style.display = 'flex';
+                            statusMsg.textContent = '⛔ تعذر التحميل';
+                            statusMsg.classList.add('error');
+                        }
+                    }, CONFIG.TIMINGS.FAIL_THRESHOLD));
+
+                    // Success Handler
+                    frame.addEventListener('load', () => {
+                        this.state = 'loaded';
+                        this.timers.forEach(clearTimeout);
+                        setTimeout(() => {
+                            splash.classList.add('hide');
+                            frame.classList.add('show');
+                        }, 600);
+                    });
+                }
+            };
+
+            // 🚀 Public Init
+            return {
+                init: function() {
+                    Security.init();
+                    Network.init();
+                    UX.init();
+                    
+                    // Service Worker Registration
+                    if ('serviceWorker' in navigator) {
+                        window.addEventListener('load', () => {
+                            navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW Error:', err));
+                        });
+                    }
+                }
+            };
+        })();
+
+        // Start the Enterprise Wrapper
+        document.addEventListener('DOMContentLoaded', () => {
+            RasadEnterpriseWrapper.init();
+        });
+    </script>
+</body>
+</html>
