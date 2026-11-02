@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -175,32 +175,6 @@
             allow="fullscreen; camera; microphone; geolocation; clipboard-write" 
             title="منظومة رَصْد للمتابعة"></iframe>
 
-        <!-- 🛡️ Smart Fallback Modal (يظهر فقط عند فشل التحميل) -->
-    <div id="smart-fallback" style="display: none; position: fixed; inset: 0; z-index: 3000; background: rgba(30, 27, 75, 0.95); backdrop-filter: blur(12px); flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;">
-        <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 32px 24px; max-width: 420px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
-            <div style="width: 70px; height: 70px; background: rgba(245, 158, 11, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 1px solid rgba(245, 158, 11, 0.3);">
-                <i class="fa-solid fa-shield-halved" style="font-size: 32px; color: #f59e0b;"></i>
-            </div>
-            <h2 style="color: #fff; font-size: 20px; font-weight: 800; margin-bottom: 12px;">تنبيه أمني ذكي</h2>
-            <p style="color: rgba(255,255,255,0.8); font-size: 14px; line-height: 1.7; margin-bottom: 24px;">
-                رصد النظام تعارضاً في جلسات المتصفح المتعددة.<br>
-                لضمان عمل المنظومة بأمان، يرجى استخدام أحد الحلين الفوريين:
-            </p>
-            
-            <button id="copy-link-btn" style="width: 100%; padding: 14px; border: none; border-radius: 12px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; font-family: 'Tajawal', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; transition: transform 0.2s;">
-                <i class="fa-regular fa-copy"></i> نسخ الرابط للفتح في نافذة خفية
-            </button>
-            
-            <button id="direct-open-btn" style="width: 100%; padding: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; background: rgba(255,255,255,0.05); color: #fff; font-family: 'Tajawal', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;">
-                <i class="fa-solid fa-external-link-alt"></i> محاولة الفتح المباشر في نافذة جديدة
-            </button>
-
-            <p id="copy-success-msg" style="color: #10b981; font-size: 13px; font-weight: 700; margin-top: 16px; display: none; animation: slideUp 0.3s ease;">
-                <i class="fa-solid fa-check-circle"></i> تم النسخ! افتح متصفحاً خفياً (Ctrl+Shift+N) والصق الرابط
-            </p>
-        </div>
-    </div>
-
     <!-- 📲 iOS Banner -->
     <div id="ios-banner">
         <span class="close-btn" id="close-ios-banner">&times;</span>
@@ -210,63 +184,256 @@
         3️⃣ اضغط «إضافة» — وسيفتح كتطبيق مستقل
     </div>
 
+    <!-- 🔗 Fallback Buttons -->
+    <button id="install-btn" class="float-btn">📲 تثبيت التطبيق</button>
+    <a id="fallback-btn" class="float-btn" href="#" target="_blank" rel="noopener">🔗 فتح التطبيق الاحتياطي</a>
+
     <!-- 🏗️ Enterprise Architecture (IIFE) -->
     <script>
+
+        // 🛡️ كشف مشكلة /u/ في رابط Google Apps Script
+        (function detectAndFixGoogleUrlIssue() {
+            'use strict';
+            
+            const CURRENT_URL = window.location.href;
+            const CLEAN_URL = 'https://script.google.com/macros/s/AKfycbzz4oBwCsAXytI24UURxixh2xnazAqWOmhMIhAgn2VoDX2ZtARNDCAVbC0QC8-6-BKX7w/exec';
+            
+            // هل الرابط يحتوي على /u/ ؟
+            if (CURRENT_URL.includes('/macros/u/')) {
+                // انتظر حتى تحميل الصفحة
+                window.addEventListener('load', function() {
+                    // انتظر 2 ثانية ثم اعرض الرسالة
+                    setTimeout(function() {
+                        showUrlFixModal();
+                    }, 2000);
+                });
+            }
+            
+            function showUrlFixModal() {
+                // إنشاء الـ Modal
+                const modal = document.createElement('div');
+                modal.id = 'url-fix-modal';
+                modal.style.cssText = `
+                    position: fixed;
+                    inset: 0;
+                    z-index: 99999;
+                    background: rgba(30, 27, 75, 0.98);
+                    backdrop-filter: blur(12px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    font-family: 'Tajawal', sans-serif;
+                `;
+                
+                modal.innerHTML = `
+                    <div style="
+                        background: rgba(255,255,255,0.05);
+                        border: 2px solid rgba(245, 158, 11, 0.4);
+                        border-radius: 24px;
+                        padding: 32px 24px;
+                        max-width: 480px;
+                        width: 100%;
+                        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+                        text-align: center;
+                    ">
+                        <div style="
+                            width: 80px;
+                            height: 80px;
+                            background: rgba(245, 158, 11, 0.15);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin: 0 auto 20px;
+                            border: 2px solid rgba(245, 158, 11, 0.4);
+                        ">
+                            <i class="fa-solid fa-triangle-exclamation" style="font-size: 36px; color: #f59e0b;"></i>
+                        </div>
+                        
+                        <h2 style="
+                            color: #fff;
+                            font-size: 22px;
+                            font-weight: 900;
+                            margin-bottom: 16px;
+                            font-family: 'Tajawal', sans-serif;
+                        ">تنبيه مهم</h2>
+                        
+                        <p style="
+                            color: rgba(255,255,255,0.85);
+                            font-size: 15px;
+                            line-height: 1.8;
+                            margin-bottom: 24px;
+                            font-family: 'Tajawal', sans-serif;
+                        ">
+                            تم كشف تعارض في جلسات المتصفح المتعددة.<br>
+                            للحل، اتبع هذه الخطوات البسيطة:
+                        </p>
+                        
+                        <div style="
+                            background: rgba(16, 185, 129, 0.1);
+                            border: 1px solid rgba(16, 185, 129, 0.3);
+                            border-radius: 12px;
+                            padding: 18px;
+                            margin-bottom: 24px;
+                            text-align: right;
+                        ">
+                            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; color: #fff; font-size: 14px;">
+                                <div style="background: #10b981; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">1</div>
+                                <div>اضغط على زر <strong style="color: #6ee7b7;">«نسخ الرابط الصحيح»</strong> أدناه</div>
+                            </div>
+                            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; color: #fff; font-size: 14px;">
+                                <div style="background: #10b981; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">2</div>
+                                <div>افتح نافذة متصفح خفية: <strong style="color: #6ee7b7;">Ctrl + Shift + N</strong> (أو من القائمة)</div>
+                            </div>
+                            <div style="display: flex; align-items: flex-start; gap: 12px; color: #fff; font-size: 14px;">
+                                <div style="background: #10b981; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">3</div>
+                                <div>الصق الرابط واضغط <strong style="color: #6ee7b7;">Enter</strong></div>
+                            </div>
+                        </div>
+                        
+                        <button id="copy-correct-url-btn" style="
+                            width: 100%;
+                            padding: 16px;
+                            border: none;
+                            border-radius: 12px;
+                            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+                            color: #fff;
+                            font-family: 'Tajawal', sans-serif;
+                            font-size: 16px;
+                            font-weight: 800;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 10px;
+                            transition: transform 0.2s;
+                        ">
+                            <i class="fa-regular fa-copy"></i> نسخ الرابط الصحيح
+                        </button>
+                        
+                        <div id="copy-success-msg" style="
+                            display: none;
+                            color: #10b981;
+                            font-size: 14px;
+                            font-weight: 800;
+                            margin-top: 16px;
+                            animation: slideUp 0.3s ease;
+                        ">
+                            <i class="fa-solid fa-check-circle"></i> تم النسخ بنجاح! افتح نافذة خفية والصق الرابط
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // إضافة حدث النسخ
+                document.getElementById('copy-correct-url-btn').addEventListener('click', function() {
+                    navigator.clipboard.writeText(CLEAN_URL).then(() => {
+                        const btn = document.getElementById('copy-correct-url-btn');
+                        const msg = document.getElementById('copy-success-msg');
+                        
+                        btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i> تم النسخ بنجاح';
+                        msg.style.display = 'block';
+                        
+                        setTimeout(() => {
+                            btn.style.background = 'linear-gradient(135deg, #4f46e5, #7c3aed)';
+                            btn.innerHTML = '<i class="fa-regular fa-copy"></i> نسخ الرابط الصحيح';
+                            msg.style.display = 'none';
+                        }, 3000);
+                    }).catch(() => {
+                        // Fallback
+                        const textArea = document.createElement('textarea');
+                        textArea.value = CLEAN_URL;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        const btn = document.getElementById('copy-correct-url-btn');
+                        const msg = document.getElementById('copy-success-msg');
+                        
+                        btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i> تم النسخ بنجاح';
+                        msg.style.display = 'block';
+                    });
+                });
+            }
+        })();
+
+
+        
         const RasadEnterpriseWrapper = (function() {
             'use strict';
 
+            // ⚙️ Configuration
             const CONFIG = {
                 APP_URL: 'https://script.google.com/macros/s/AKfycbzz4oBwCsAXytI24UURxixh2xnazAqWOmhMIhAgn2VoDX2ZtARNDCAVbC0QC8-6-BKX7w/exec',
                 TIMINGS: {
-                    SLOW_NETWORK_THRESHOLD: 6000,
-                    FAIL_THRESHOLD: 12000
+                    SLOW_NETWORK_THRESHOLD: 6000, // 6 seconds
+                    FAIL_THRESHOLD: 12000          // 12 seconds
                 },
                 STORAGE_KEYS: {
                     IOS_BANNER_DISMISSED: 'rasad_ios_banner_dismissed'
                 }
             };
 
+            // 🛡️ Security Module
             const Security = {
                 init: function() {
+                    // Anti-Debugging (Prevent F12, Right Click, etc.)
                     document.addEventListener('contextmenu', e => e.preventDefault());
                     document.addEventListener('keydown', e => {
-                        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || (e.ctrlKey && e.key.toUpperCase() === 'U')) {
+                        if (e.key === 'F12' || 
+                            (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || 
+                            (e.ctrlKey && e.key.toUpperCase() === 'U')) {
                             e.preventDefault();
+                            console.warn('⛔ Debugging tools are disabled for security.');
                         }
                     });
                 }
             };
 
+            // 🌐 Network Module (Offline-First)
             const Network = {
                 init: function() {
                     const banner = document.getElementById('offline-banner');
-                    const updateStatus = () => banner.classList.toggle('show', !navigator.onLine);
+                    const updateStatus = () => {
+                        if (!navigator.onLine) {
+                            banner.classList.add('show');
+                        } else {
+                            banner.classList.remove('show');
+                        }
+                    };
                     window.addEventListener('online', updateStatus);
                     window.addEventListener('offline', updateStatus);
-                    updateStatus();
+                    updateStatus(); // Initial check
                 }
             };
 
+            // 🎨 UX Module
             const UX = {
-                state: 'loading',
+                state: 'loading', // loading | slow | failed | loaded
                 timers: [],
 
                 init: function() {
                     this.setupIosBanner();
                     this.setupPWA();
                     this.startLoadingSequence();
-                    this.setupSmartFallback();
                 },
 
                 setupIosBanner: function() {
                     const banner = document.getElementById('ios-banner');
+                    const closeBtn = document.getElementById('close-ios-banner');
                     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
                     
                     if (isIOS && !isStandalone && !localStorage.getItem(CONFIG.STORAGE_KEYS.IOS_BANNER_DISMISSED)) {
                         setTimeout(() => { banner.style.display = 'block'; }, 2500);
                     }
-                    document.getElementById('close-ios-banner').addEventListener('click', () => {
+
+                    closeBtn.addEventListener('click', () => {
                         banner.style.display = 'none';
                         localStorage.setItem(CONFIG.STORAGE_KEYS.IOS_BANNER_DISMISSED, 'true');
                     });
@@ -275,11 +442,13 @@
                 setupPWA: function() {
                     let deferredPrompt;
                     const installBtn = document.getElementById('install-btn');
+                    
                     window.addEventListener('beforeinstallprompt', (e) => {
                         e.preventDefault();
                         deferredPrompt = e;
                         installBtn.style.display = 'flex';
                     });
+
                     installBtn.addEventListener('click', async () => {
                         if (!deferredPrompt) return;
                         deferredPrompt.prompt();
@@ -289,96 +458,68 @@
                     });
                 },
 
-                setupSmartFallback: function() {
-                    const copyBtn = document.getElementById('copy-link-btn');
-                    const directBtn = document.getElementById('direct-open-btn');
-                    const successMsg = document.getElementById('copy-success-msg');
-
-                    copyBtn.addEventListener('click', () => {
-                        navigator.clipboard.writeText(CONFIG.APP_URL).then(() => {
-                            successMsg.style.display = 'block';
-                            copyBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                            copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم النسخ بنجاح';
-                        }).catch(() => {
-                            // Fallback for older browsers
-                            const textArea = document.createElement("textarea");
-                            textArea.value = CONFIG.APP_URL;
-                            document.body.appendChild(textArea);
-                            textArea.select();
-                            document.execCommand("copy");
-                            document.body.removeChild(textArea);
-                            successMsg.style.display = 'block';
-                        });
-                    });
-
-                    directBtn.addEventListener('click', () => {
-                        window.open(CONFIG.APP_URL, '_blank', 'noopener,noreferrer');
-                    });
-                },
-
                 startLoadingSequence: function() {
                     const frame = document.getElementById('appFrame');
                     const splash = document.getElementById('splash');
                     const statusMsg = document.getElementById('status-msg');
-                    const fallbackModal = document.getElementById('smart-fallback');
+                    const fallbackBtn = document.getElementById('fallback-btn');
                     
+                    fallbackBtn.href = CONFIG.APP_URL;
+
+                    // Stage 1: Normal Loading (0-6s)
                     this.timers.push(setTimeout(() => {
                         if (this.state === 'loading') {
                             this.state = 'slow';
-                            statusMsg.textContent = '⚠️ الشبكة بطيئة... جاري تحسين المسار';
+                            statusMsg.textContent = '⚠️ الشبكة بطيئة... جاري المحاولة';
                             statusMsg.classList.add('warning');
                         }
                     }, CONFIG.TIMINGS.SLOW_NETWORK_THRESHOLD));
 
+                    // Stage 2: Fallback (12s+)
                     this.timers.push(setTimeout(() => {
                         if (this.state !== 'loaded') {
                             this.state = 'failed';
                             splash.classList.add('hide');
-                            // إظهار الواجهة الذكية بدلاً من الزر العادي
-                            fallbackModal.style.display = 'flex';
+                            fallbackBtn.style.display = 'flex';
+                            statusMsg.textContent = '⛔ تعذر التحميل';
+                            statusMsg.classList.add('error');
                         }
                     }, CONFIG.TIMINGS.FAIL_THRESHOLD));
 
+                    // Success Handler
                     frame.addEventListener('load', () => {
-                        // محاولة التحقق من أن الإطار لم يحمل صفحة خطأ Google (Cross-origin check)
-                        try {
-                            // إذا كان الرابط لا يزال يحتوي على /u/ وهو يسبب مشكلة، يمكننا محاولة إعادة التوجيه
-                            this.state = 'loaded';
-                            this.timers.forEach(clearTimeout);
-                            setTimeout(() => {
-                                splash.classList.add('hide');
-                                frame.classList.add('show');
-                            }, 600);
-                        } catch (e) {
-                            // في حالة وجود حظر Cross-origin، نعتبره محملاً لأن Google Apps Script تعمل هكذا أحياناً
-                            this.state = 'loaded';
-                            this.timers.forEach(clearTimeout);
-                            setTimeout(() => {
-                                splash.classList.add('hide');
-                                frame.classList.add('show');
-                            }, 600);
-                        }
+                        this.state = 'loaded';
+                        this.timers.forEach(clearTimeout);
+                        setTimeout(() => {
+                            splash.classList.add('hide');
+                            frame.classList.add('show');
+                        }, 600);
                     });
                 }
             };
 
+            // 🚀 Public Init
             return {
                 init: function() {
                     Security.init();
                     Network.init();
                     UX.init();
+                    
+                    // Service Worker Registration
                     if ('serviceWorker' in navigator) {
                         window.addEventListener('load', () => {
-                            navigator.serviceWorker.register('./sw.js').catch(() => {});
+                            navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW Error:', err));
                         });
                     }
                 }
             };
         })();
 
+        // Start the Enterprise Wrapper
         document.addEventListener('DOMContentLoaded', () => {
             RasadEnterpriseWrapper.init();
         });
     </script>
 </body>
 </html>
+المرفوع علي الجيت هاب حتي لا يحتاج العميل الي اجراء اي شئ اخر 
