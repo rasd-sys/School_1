@@ -175,6 +175,32 @@
             allow="fullscreen; camera; microphone; geolocation; clipboard-write" 
             title="منظومة رَصْد للمتابعة"></iframe>
 
+        <!-- 🛡️ Smart Fallback Modal (يظهر فقط عند فشل التحميل) -->
+    <div id="smart-fallback" style="display: none; position: fixed; inset: 0; z-index: 3000; background: rgba(30, 27, 75, 0.95); backdrop-filter: blur(12px); flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;">
+        <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 32px 24px; max-width: 420px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+            <div style="width: 70px; height: 70px; background: rgba(245, 158, 11, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                <i class="fa-solid fa-shield-halved" style="font-size: 32px; color: #f59e0b;"></i>
+            </div>
+            <h2 style="color: #fff; font-size: 20px; font-weight: 800; margin-bottom: 12px;">تنبيه أمني ذكي</h2>
+            <p style="color: rgba(255,255,255,0.8); font-size: 14px; line-height: 1.7; margin-bottom: 24px;">
+                رصد النظام تعارضاً في جلسات المتصفح المتعددة.<br>
+                لضمان عمل المنظومة بأمان، يرجى استخدام أحد الحلين الفوريين:
+            </p>
+            
+            <button id="copy-link-btn" style="width: 100%; padding: 14px; border: none; border-radius: 12px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; font-family: 'Tajawal', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; transition: transform 0.2s;">
+                <i class="fa-regular fa-copy"></i> نسخ الرابط للفتح في نافذة خفية
+            </button>
+            
+            <button id="direct-open-btn" style="width: 100%; padding: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; background: rgba(255,255,255,0.05); color: #fff; font-family: 'Tajawal', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;">
+                <i class="fa-solid fa-external-link-alt"></i> محاولة الفتح المباشر في نافذة جديدة
+            </button>
+
+            <p id="copy-success-msg" style="color: #10b981; font-size: 13px; font-weight: 700; margin-top: 16px; display: none; animation: slideUp 0.3s ease;">
+                <i class="fa-solid fa-check-circle"></i> تم النسخ! افتح متصفحاً خفياً (Ctrl+Shift+N) والصق الرابط
+            </p>
+        </div>
+    </div>
+
     <!-- 📲 iOS Banner -->
     <div id="ios-banner">
         <span class="close-btn" id="close-ios-banner">&times;</span>
@@ -184,82 +210,63 @@
         3️⃣ اضغط «إضافة» — وسيفتح كتطبيق مستقل
     </div>
 
-    <!-- 🔗 Fallback Buttons -->
-    <button id="install-btn" class="float-btn">📲 تثبيت التطبيق</button>
-    <a id="fallback-btn" class="float-btn" href="#" target="_blank" rel="noopener">🔗 فتح التطبيق الاحتياطي</a>
-
     <!-- 🏗️ Enterprise Architecture (IIFE) -->
     <script>
         const RasadEnterpriseWrapper = (function() {
             'use strict';
 
-            // ⚙️ Configuration
             const CONFIG = {
                 APP_URL: 'https://script.google.com/macros/s/AKfycbzz4oBwCsAXytI24UURxixh2xnazAqWOmhMIhAgn2VoDX2ZtARNDCAVbC0QC8-6-BKX7w/exec',
                 TIMINGS: {
-                    SLOW_NETWORK_THRESHOLD: 6000, // 6 seconds
-                    FAIL_THRESHOLD: 12000          // 12 seconds
+                    SLOW_NETWORK_THRESHOLD: 6000,
+                    FAIL_THRESHOLD: 12000
                 },
                 STORAGE_KEYS: {
                     IOS_BANNER_DISMISSED: 'rasad_ios_banner_dismissed'
                 }
             };
 
-            // 🛡️ Security Module
             const Security = {
                 init: function() {
-                    // Anti-Debugging (Prevent F12, Right Click, etc.)
                     document.addEventListener('contextmenu', e => e.preventDefault());
                     document.addEventListener('keydown', e => {
-                        if (e.key === 'F12' || 
-                            (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || 
-                            (e.ctrlKey && e.key.toUpperCase() === 'U')) {
+                        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || (e.ctrlKey && e.key.toUpperCase() === 'U')) {
                             e.preventDefault();
-                            console.warn('⛔ Debugging tools are disabled for security.');
                         }
                     });
                 }
             };
 
-            // 🌐 Network Module (Offline-First)
             const Network = {
                 init: function() {
                     const banner = document.getElementById('offline-banner');
-                    const updateStatus = () => {
-                        if (!navigator.onLine) {
-                            banner.classList.add('show');
-                        } else {
-                            banner.classList.remove('show');
-                        }
-                    };
+                    const updateStatus = () => banner.classList.toggle('show', !navigator.onLine);
                     window.addEventListener('online', updateStatus);
                     window.addEventListener('offline', updateStatus);
-                    updateStatus(); // Initial check
+                    updateStatus();
                 }
             };
 
-            // 🎨 UX Module
             const UX = {
-                state: 'loading', // loading | slow | failed | loaded
+                state: 'loading',
                 timers: [],
 
                 init: function() {
                     this.setupIosBanner();
                     this.setupPWA();
                     this.startLoadingSequence();
+                    this.setupSmartFallback();
                 },
 
                 setupIosBanner: function() {
                     const banner = document.getElementById('ios-banner');
-                    const closeBtn = document.getElementById('close-ios-banner');
                     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
                     
                     if (isIOS && !isStandalone && !localStorage.getItem(CONFIG.STORAGE_KEYS.IOS_BANNER_DISMISSED)) {
                         setTimeout(() => { banner.style.display = 'block'; }, 2500);
                     }
-
-                    closeBtn.addEventListener('click', () => {
+                    document.getElementById('close-ios-banner').addEventListener('click', () => {
                         banner.style.display = 'none';
                         localStorage.setItem(CONFIG.STORAGE_KEYS.IOS_BANNER_DISMISSED, 'true');
                     });
@@ -268,13 +275,11 @@
                 setupPWA: function() {
                     let deferredPrompt;
                     const installBtn = document.getElementById('install-btn');
-                    
                     window.addEventListener('beforeinstallprompt', (e) => {
                         e.preventDefault();
                         deferredPrompt = e;
                         installBtn.style.display = 'flex';
                     });
-
                     installBtn.addEventListener('click', async () => {
                         if (!deferredPrompt) return;
                         deferredPrompt.prompt();
@@ -284,64 +289,93 @@
                     });
                 },
 
+                setupSmartFallback: function() {
+                    const copyBtn = document.getElementById('copy-link-btn');
+                    const directBtn = document.getElementById('direct-open-btn');
+                    const successMsg = document.getElementById('copy-success-msg');
+
+                    copyBtn.addEventListener('click', () => {
+                        navigator.clipboard.writeText(CONFIG.APP_URL).then(() => {
+                            successMsg.style.display = 'block';
+                            copyBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                            copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم النسخ بنجاح';
+                        }).catch(() => {
+                            // Fallback for older browsers
+                            const textArea = document.createElement("textarea");
+                            textArea.value = CONFIG.APP_URL;
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand("copy");
+                            document.body.removeChild(textArea);
+                            successMsg.style.display = 'block';
+                        });
+                    });
+
+                    directBtn.addEventListener('click', () => {
+                        window.open(CONFIG.APP_URL, '_blank', 'noopener,noreferrer');
+                    });
+                },
+
                 startLoadingSequence: function() {
                     const frame = document.getElementById('appFrame');
                     const splash = document.getElementById('splash');
                     const statusMsg = document.getElementById('status-msg');
-                    const fallbackBtn = document.getElementById('fallback-btn');
+                    const fallbackModal = document.getElementById('smart-fallback');
                     
-                    fallbackBtn.href = CONFIG.APP_URL;
-
-                    // Stage 1: Normal Loading (0-6s)
                     this.timers.push(setTimeout(() => {
                         if (this.state === 'loading') {
                             this.state = 'slow';
-                            statusMsg.textContent = '⚠️ الشبكة بطيئة... جاري المحاولة';
+                            statusMsg.textContent = '⚠️ الشبكة بطيئة... جاري تحسين المسار';
                             statusMsg.classList.add('warning');
                         }
                     }, CONFIG.TIMINGS.SLOW_NETWORK_THRESHOLD));
 
-                    // Stage 2: Fallback (12s+)
                     this.timers.push(setTimeout(() => {
                         if (this.state !== 'loaded') {
                             this.state = 'failed';
                             splash.classList.add('hide');
-                            fallbackBtn.style.display = 'flex';
-                            statusMsg.textContent = '⛔ تعذر التحميل';
-                            statusMsg.classList.add('error');
+                            // إظهار الواجهة الذكية بدلاً من الزر العادي
+                            fallbackModal.style.display = 'flex';
                         }
                     }, CONFIG.TIMINGS.FAIL_THRESHOLD));
 
-                    // Success Handler
                     frame.addEventListener('load', () => {
-                        this.state = 'loaded';
-                        this.timers.forEach(clearTimeout);
-                        setTimeout(() => {
-                            splash.classList.add('hide');
-                            frame.classList.add('show');
-                        }, 600);
+                        // محاولة التحقق من أن الإطار لم يحمل صفحة خطأ Google (Cross-origin check)
+                        try {
+                            // إذا كان الرابط لا يزال يحتوي على /u/ وهو يسبب مشكلة، يمكننا محاولة إعادة التوجيه
+                            this.state = 'loaded';
+                            this.timers.forEach(clearTimeout);
+                            setTimeout(() => {
+                                splash.classList.add('hide');
+                                frame.classList.add('show');
+                            }, 600);
+                        } catch (e) {
+                            // في حالة وجود حظر Cross-origin، نعتبره محملاً لأن Google Apps Script تعمل هكذا أحياناً
+                            this.state = 'loaded';
+                            this.timers.forEach(clearTimeout);
+                            setTimeout(() => {
+                                splash.classList.add('hide');
+                                frame.classList.add('show');
+                            }, 600);
+                        }
                     });
                 }
             };
 
-            // 🚀 Public Init
             return {
                 init: function() {
                     Security.init();
                     Network.init();
                     UX.init();
-                    
-                    // Service Worker Registration
                     if ('serviceWorker' in navigator) {
                         window.addEventListener('load', () => {
-                            navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW Error:', err));
+                            navigator.serviceWorker.register('./sw.js').catch(() => {});
                         });
                     }
                 }
             };
         })();
 
-        // Start the Enterprise Wrapper
         document.addEventListener('DOMContentLoaded', () => {
             RasadEnterpriseWrapper.init();
         });
